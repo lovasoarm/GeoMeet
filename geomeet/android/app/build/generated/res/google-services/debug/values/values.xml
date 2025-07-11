@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="firebase_database_url" translatable="false">https://phonetracking-6c6fc-default-rtdb.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">331650897885</string>
+    <string name="google_api_key" translatable="false">AIzaSyAilj9OYi3IwyzCkvwoFI4paclJ79D_edI</string>
+    <string name="google_app_id" translatable="false">1:331650897885:android:01cb19e6df9a02eb580834</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAilj9OYi3IwyzCkvwoFI4paclJ79D_edI</string>
+    <string name="google_storage_bucket" translatable="false">phonetracking-6c6fc.firebasestorage.app</string>
+    <string name="project_id" translatable="false">phonetracking-6c6fc</string>
+</resources>

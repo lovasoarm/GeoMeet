@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "331650897885",
+    "firebase_url": "https://phonetracking-6c6fc-default-rtdb.firebaseio.com",
+    "project_id": "phonetracking-6c6fc",
+    "storage_bucket": "phonetracking-6c6fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:331650897885:android:01cb19e6df9a02eb580834",
+        "android_client_info": {
+          "package_name": "com.company.map"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAilj9OYi3IwyzCkvwoFI4paclJ79D_edI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
