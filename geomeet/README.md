@@ -6,13 +6,13 @@ Elle est conçue pour des usages comme le suivi parental, la localisation de ses
 
 ## Demonstration
 
-### Écran de connexion
-![Login](docs/img/one.png)
+### Splash
+![Splash](docs/img/one.png)
 
-### Écran d'inscription
-![Register](docs/img/two.png)
+### Login
+![login](docs/img/two.png)
 
-### Écran d'accueil
+### Home
 ![Home](docs/img/three.png)
 
 ### Map
