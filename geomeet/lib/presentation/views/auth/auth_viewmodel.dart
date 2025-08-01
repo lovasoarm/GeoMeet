@@ -65,9 +65,8 @@ class AuthViewModel with ChangeNotifier {
         password: password,
       );
 
-   
       if (user != null && _dbService != null) {
-        await _dbService!.setUserActive(true);
+        await _dbService.setUserActive(true);
       }
 
       _setLoading(false);
@@ -82,7 +81,7 @@ class AuthViewModel with ChangeNotifier {
   Future<void> logout() async {
     try {
       if (_dbService != null) {
-        await _dbService!.setUserActive(false);
+        await _dbService.setUserActive(false);
       }
       await _authService.logout();
       _currentUser = null;

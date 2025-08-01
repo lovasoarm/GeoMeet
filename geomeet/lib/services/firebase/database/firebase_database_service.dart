@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:geolocator/geolocator.dart';
@@ -11,16 +13,24 @@ class FirebaseDatabaseService {
 
   firebase_auth.User? get currentUser => _auth.currentUser;
 
-
   Future<void> sendUserLocation(LocationModel location) async {
     final user = currentUser;
     if (user == null) throw Exception('Utilisateur non connecté');
 
-    await _db.child('userLocations/${user.uid}/${location.id}').update({
+    await _db.child('userLocations/${user.uid}/${location.id}').set({
       ...location.toMap(),
       'timestamp': ServerValue.timestamp,
     });
+
+    await _db.child('users/${user.uid}').update({
+      'lastLocation': {
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+        'timestamp': ServerValue.timestamp,
+      }
+    });
   }
+
   Future<void> updateUserLocation(Position position) async {
     final uid = currentUser?.uid;
     if (uid == null) return;
@@ -38,20 +48,21 @@ class FirebaseDatabaseService {
     final user = currentUser;
     if (user == null) return Stream.value([]);
 
-    return _db.child('userLocations/${user.uid}')
+    return _db
+        .child('userLocations/${user.uid}')
         .orderByChild('timestamp')
         .onValue
         .map((event) {
-          final data = event.snapshot.value as Map?;
-          if (data == null) return [];
+      final data = event.snapshot.value as Map?;
+      if (data == null) return [];
 
-          return data.entries.map((entry) {
-            return LocationModel.fromMap({
-              'id': entry.key,
-              ...Map<String, dynamic>.from(entry.value),
-            });
-          }).toList();
+      return data.entries.map((entry) {
+        return LocationModel.fromMap({
+          'id': entry.key,
+          ...Map<String, dynamic>.from(entry.value),
         });
+      }).toList();
+    });
   }
 
   Stream<LocationModel?> getLastUserLocation() {
@@ -59,54 +70,61 @@ class FirebaseDatabaseService {
   }
 
   Stream<List<LocationModel>> getUserLocationsForUser(String uid) {
-    return _db.child('userLocations/$uid')
+    return _db
+        .child('userLocations/$uid')
         .orderByChild('timestamp')
         .onValue
         .map((event) {
-          final data = event.snapshot.value as Map?;
-          if (data == null) return [];
+      final data = event.snapshot.value as Map?;
+      if (data == null) return [];
 
-          return data.entries.map((entry) {
-            return LocationModel.fromMap({
-              'id': entry.key,
-              ...Map<String, dynamic>.from(entry.value),
-            });
-          }).toList();
+      return data.entries.map((entry) {
+        return LocationModel.fromMap({
+          'id': entry.key,
+          ...Map<String, dynamic>.from(entry.value),
         });
+      }).toList();
+    });
   }
 
   Stream<LocationModel?> getRealtimeFriendLocation(String friendId) {
-    return _db.child('userLocations/$friendId')
+    return _db
+        .child('userLocations/$friendId')
         .orderByChild('timestamp')
         .limitToLast(1)
         .onValue
         .map((event) {
-          final data = event.snapshot.value as Map?;
-          if (data == null) return null;
+      final data = event.snapshot.value as Map?;
+      if (data == null) return null;
 
-          final lastEntry = data.entries.last;
-          return LocationModel.fromMap({
-            'id': lastEntry.key,
-            ...Map<String, dynamic>.from(lastEntry.value),
-          });
-        });
+      final lastEntry = data.entries.last;
+      return LocationModel.fromMap({
+        'id': lastEntry.key,
+        ...Map<String, dynamic>.from(lastEntry.value),
+      });
+    });
   }
 
   Stream<List<LocationModel>> getFriendLocationsHistory(String friendId) {
-    return _db.child('userLocations/$friendId')
-        .orderByChild('timestamp')
+    return _db
+        .child('userLocations/$friendId')
         .onValue
         .map((event) {
-          final data = event.snapshot.value as Map?;
-          if (data == null) return [];
+      final data = event.snapshot.value as Map?;
+      if (data == null) {
+        return [];
+      }
 
-          return data.entries.map((entry) {
-            return LocationModel.fromMap({
-              'id': entry.key,
-              ...Map<String, dynamic>.from(entry.value),
-            });
-          }).toList();
+      final locations = data.entries.map((entry) {
+        return LocationModel.fromMap({
+          'id': entry.key,
+          ...Map<String, dynamic>.from(entry.value),
         });
+      }).toList();
+      
+      locations.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return locations;
+    });
   }
 
   Future<void> createUser(app_user.User user) async {
@@ -119,14 +137,16 @@ class FirebaseDatabaseService {
   Future<app_user.User?> getUser(String uid) async {
     final snapshot = await _db.child('users/$uid').get();
     return snapshot.exists
-        ? app_user.User.fromJson(Map<String, dynamic>.from(snapshot.value as Map))
+        ? app_user.User.fromJson(
+            Map<String, dynamic>.from(snapshot.value as Map))
         : null;
   }
 
   Stream<app_user.User?> getUserStream(String uid) {
     return _db.child('users/$uid').onValue.map((event) {
       return event.snapshot.exists
-          ? app_user.User.fromJson(Map<String, dynamic>.from(event.snapshot.value as Map))
+          ? app_user.User.fromJson(
+              Map<String, dynamic>.from(event.snapshot.value as Map))
           : null;
     });
   }
@@ -141,6 +161,15 @@ class FirebaseDatabaseService {
     }
   }
 
+  Future<void> setLocationShared(bool isLocationShared) async {
+    final user = currentUser;
+    if (user != null) {
+      await _db.child('users/${user.uid}').update({
+        'isLocationShared': isLocationShared,
+        'locationSharedAt': ServerValue.timestamp,
+      });
+    }
+  }
 
   Stream<List<app_user.User>> getFriendsOfCurrentUser() {
     final uid = currentUser?.uid;
@@ -153,7 +182,10 @@ class FirebaseDatabaseService {
       final friends = await Future.wait(
         data.keys.map((friendId) async {
           final snap = await _db.child('users/$friendId').get();
-          return snap.exists ? app_user.User.fromJson(Map<String, dynamic>.from(snap.value as Map)) : null;
+          return snap.exists
+              ? app_user.User.fromJson(
+                  Map<String, dynamic>.from(snap.value as Map))
+              : null;
         }),
       );
 
@@ -176,7 +208,6 @@ class FirebaseDatabaseService {
     ]);
   }
 
-
   Future<void> sendFriendRequest(String receiverUid) async {
     final sender = currentUser;
     if (sender == null) throw Exception("Utilisateur non connecté");
@@ -185,7 +216,8 @@ class FirebaseDatabaseService {
       throw Exception("Vous êtes déjà ami avec cet utilisateur");
     }
 
-    final existingRequest = await _db.child('friendRequests/${sender.uid}/$receiverUid').get();
+    final existingRequest =
+        await _db.child('friendRequests/${sender.uid}/$receiverUid').get();
     if (existingRequest.exists) {
       throw Exception("Demande déjà envoyée");
     }
@@ -200,7 +232,8 @@ class FirebaseDatabaseService {
         'to': receiverUid,
         'from_to': '${sender.uid}_$receiverUid',
         'type': 'friend_request',
-        'message': '${senderUser?.username ?? "Quelqu’un"} veut vous ajouter en ami',
+        'message':
+            '${senderUser?.username ?? "Quelqu’un"} veut vous ajouter en ami',
         'timestamp': ServerValue.timestamp,
         'status': 'pending',
       }),
@@ -219,32 +252,31 @@ class FirebaseDatabaseService {
     await createUserFriendship(senderUid, receiverUid);
   }
 
-
   Stream<List<Map<String, dynamic>>> getNotificationsForCurrentUser() {
     final uid = currentUser?.uid;
     if (uid == null) return Stream.value([]);
 
-    return _db.child('notifications')
+    return _db
+        .child('notifications')
         .orderByChild('to')
         .equalTo(uid)
         .onValue
         .map((event) {
-          final data = event.snapshot.value as Map?;
-          if (data == null) return [];
+      final data = event.snapshot.value as Map?;
+      if (data == null) return [];
 
-          return data.entries.map((entry) {
-            return {
-              'id': entry.key,
-              ...Map<String, dynamic>.from(entry.value),
-            };
-          }).toList();
-        });
+      return data.entries.map((entry) {
+        return {
+          'id': entry.key,
+          ...Map<String, dynamic>.from(entry.value),
+        };
+      }).toList();
+    });
   }
 
   Future<void> deleteNotification(String notificationId) async {
     await _db.child('notifications/$notificationId').remove();
   }
-
 
   Future<void> createUserFriendship(String userA, String userB) async {
     final alreadyFriends = await checkFriendshipStatus(userB);
@@ -261,7 +293,8 @@ class FirebaseDatabaseService {
   }
 
   Future<void> _deleteFriendRequestNotification(String fromTo) async {
-    final snapshot = await _db.child('notifications')
+    final snapshot = await _db
+        .child('notifications')
         .orderByChild('from_to')
         .equalTo(fromTo)
         .once();
@@ -273,8 +306,6 @@ class FirebaseDatabaseService {
       await _db.child('notifications/$key').remove();
     }
   }
-
- 
 
   Future<void> cleanupUserData() async {
     final user = currentUser;

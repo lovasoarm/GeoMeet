@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -36,24 +38,30 @@ class _AddFriendViewState extends State<AddFriendPage> {
     });
 
     try {
-      final snapshot = await db.child('users').orderByChild('username').equalTo(username).once();
+      final snapshot = await db
+          .child('users')
+          .orderByChild('username')
+          .equalTo(username)
+          .once();
       final data = snapshot.snapshot.value as Map<dynamic, dynamic>?;
 
       if (data != null && data.isNotEmpty) {
         final entry = data.entries.first;
         final v = Map<String, dynamic>.from(entry.value as Map);
         final currentUser = FirebaseAuth.instance.currentUser;
-        
+
         if (entry.key == currentUser?.uid) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Vous ne pouvez pas vous ajouter vous-même.")),
+            const SnackBar(
+                content: Text("Vous ne pouvez pas vous ajouter vous-même.")),
           );
           return;
         }
 
         final isFriend = await _checkFriendship(currentUser?.uid, entry.key);
-     
-        final hasPendingRequest = await _checkPendingRequest(currentUser?.uid, entry.key);
+
+        final hasPendingRequest =
+            await _checkPendingRequest(currentUser?.uid, entry.key);
 
         setState(() {
           _user = {
@@ -86,9 +94,11 @@ class _AddFriendViewState extends State<AddFriendPage> {
     return snapshot.exists;
   }
 
-  Future<bool> _checkPendingRequest(String? currentUid, String? targetUid) async {
+  Future<bool> _checkPendingRequest(
+      String? currentUid, String? targetUid) async {
     if (currentUid == null || targetUid == null) return false;
-    final snapshot = await db.child('friendRequests/$currentUid/$targetUid').get();
+    final snapshot =
+        await db.child('friendRequests/$currentUid/$targetUid').get();
     return snapshot.exists;
   }
 
@@ -110,7 +120,6 @@ class _AddFriendViewState extends State<AddFriendPage> {
       final currentUid = currentUser.uid;
       final targetUid = _user!['key'];
 
-   
       final requestId = db.child('notifications').push().key;
       await db.child('notifications/$requestId').set({
         'id': requestId,
@@ -157,7 +166,8 @@ class _AddFriendViewState extends State<AddFriendPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: "Nom d'utilisateur",
-                prefixIcon: const Icon(Icons.search, color: AppColors.grayshade),
+                prefixIcon:
+                    const Icon(Icons.search, color: AppColors.grayshade),
                 filled: true,
                 fillColor: AppColors.lightgreenshede1,
                 border: OutlineInputBorder(
@@ -183,50 +193,68 @@ class _AddFriendViewState extends State<AddFriendPage> {
               Text("Utilisateur non trouvé", style: AppTextStyles.bodyText3),
             if (_user != null)
               Card(
-                margin: const EdgeInsets.symmetric(vertical: AppSizes.mediumMargin),
+                margin:
+                    const EdgeInsets.symmetric(vertical: AppSizes.mediumMargin),
                 child: Padding(
                   padding: const EdgeInsets.all(AppSizes.smallPadding),
                   child: Column(
                     children: [
                       ListTile(
-                        title: Text(_user!['username'], style: AppTextStyles.bodyText2),
+                        title: Text(_user!['username'],
+                            style: AppTextStyles.bodyText2),
                         subtitle: Text(
                           _user!['isActive'] ? "En ligne" : "Hors ligne",
                           style: AppTextStyles.bodyText3.copyWith(
-                            color: _user!['isActive'] ? Colors.green : Colors.grey,
+                            color:
+                                _user!['isActive'] ? Colors.green : Colors.grey,
                           ),
                         ),
                       ),
                       if (_alreadyFriends)
                         Text(
                           "Déjà ami",
-                          style: AppTextStyles.bodyText3.copyWith(color: Colors.green),
+                          style: AppTextStyles.bodyText3
+                              .copyWith(color: Colors.green),
                         ),
                       if (_requestPending)
                         Text(
                           "Demande en attente",
-                          style: AppTextStyles.bodyText3.copyWith(color: Colors.orange),
+                          style: AppTextStyles.bodyText3
+                              .copyWith(color: Colors.orange),
                         ),
                       const SizedBox(height: AppSizes.smallPadding),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           icon: Icon(
-                            _alreadyFriends ? Icons.check_circle : Icons.person_add,
+                            _alreadyFriends
+                                ? Icons.check_circle
+                                : Icons.person_add,
                             size: AppSizes.smallIconSize,
                           ),
-                          label: _isAdding 
-                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : Text(_alreadyFriends ? "Déjà ami" : _requestPending ? "Demande envoyée" : "Envoyer demande"),
+                          label: _isAdding
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : Text(_alreadyFriends
+                                  ? "Déjà ami"
+                                  : _requestPending
+                                      ? "Demande envoyée"
+                                      : "Envoyer demande"),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _alreadyFriends 
-                                ? Colors.green 
-                                : _requestPending 
-                                    ? Colors.orange 
+                            backgroundColor: _alreadyFriends
+                                ? Colors.green
+                                : _requestPending
+                                    ? Colors.orange
                                     : AppColors.colorAcent,
-                            padding: const EdgeInsets.symmetric(vertical: AppSizes.mediumPadding),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: AppSizes.mediumPadding),
                           ),
-                          onPressed: _alreadyFriends || _requestPending ? null : _sendFriendRequest,
+                          onPressed: _alreadyFriends || _requestPending
+                              ? null
+                              : _sendFriendRequest,
                         ),
                       ),
                     ],

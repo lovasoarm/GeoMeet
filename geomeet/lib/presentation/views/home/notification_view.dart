@@ -29,7 +29,6 @@ class _NotificationViewState extends State<NotificationView> {
 
       await _dbService.createUserFriendship(currentUid, fromUid);
 
-     
       await Future.wait([
         _dbService.deleteNotification(notificationId),
         _dbService.removeFriendRequest(fromUid, currentUid),
@@ -106,49 +105,167 @@ class _NotificationViewState extends State<NotificationView> {
         if (!userSnap.hasData) return const SizedBox.shrink();
 
         final sender = userSnap.data!;
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.1),
+                spreadRadius: 1,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(AppSizes.smallPadding),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.greenshede0,
-                child: Text(
-                  sender.username[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // En-tête avec avatar et nom
+                Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primarygreen,
+                            AppColors.greenshede0
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: Center(
+                        child: Text(
+                          sender.username[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            sender.username,
+                            style: AppTextStyles.bodyText2.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "vous a envoyé une invitation",
+                            style: AppTextStyles.bodyText3.copyWith(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              title: Text(
-                notif['message'] ?? "${sender.username} vous a envoyé une demande d'ami",
-                style: AppTextStyles.bodyText2,
-              ),
-              subtitle: Text(
-                "Demande reçue",
-                style: AppTextStyles.bodyText3.copyWith(color: Colors.grey),
-              ),
-              trailing: isHandling
-                  ? const SizedBox(
+                const SizedBox(height: 20),
+                // Boutons d'action
+                if (isHandling)
+                  const Center(
+                    child: SizedBox(
                       width: 24,
                       height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.check, color: Colors.green),
-                          onPressed: () => _acceptRequest(notifId, fromUid),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () => _rejectRequest(notifId, fromUid),
-                        ),
-                      ],
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.primarygreen),
+                      ),
                     ),
+                  )
+                else
+                  Row(
+                    children: [
+                      // Bouton refuser
+                      Expanded(
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: TextButton(
+                            onPressed: () => _rejectRequest(notifId, fromUid),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.grey[700],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                            ),
+                            child: const Text(
+                              "Refuser",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Bouton accepter
+                      Expanded(
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primarygreen,
+                                AppColors.greenshede0
+                              ],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primarygreen
+                                    .withValues(alpha: 0.3),
+                                spreadRadius: 0,
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextButton(
+                            onPressed: () => _acceptRequest(notifId, fromUid),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                            ),
+                            child: const Text(
+                              "Accepter",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
         );

@@ -15,7 +15,6 @@ class LocationService {
     return result.isGranted;
   }
 
-
   static Future<bool> checkLocationEnabled() async {
     if (kIsWeb) {
       return true;
@@ -31,8 +30,11 @@ class LocationService {
       locationSettings: LocationSettings(
         accuracy: accuracy,
         distanceFilter: distanceFilter,
+        timeLimit: const Duration(seconds: 30),
       ),
-    );
+    ).handleError((error) {
+      throw Exception('Erreur de géolocalisation: $error');
+    });
   }
 
   static Future<Position> getCurrentPosition() async {
@@ -47,9 +49,15 @@ class LocationService {
     }
 
     return await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
+      locationSettings: LocationSettings(
+        accuracy: kIsWeb ? LocationAccuracy.medium : LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
       ),
+    ).timeout(
+      const Duration(seconds: 20),
+      onTimeout: () {
+        throw Exception('Timeout lors de la récupération de la position');
+      },
     );
   }
 }

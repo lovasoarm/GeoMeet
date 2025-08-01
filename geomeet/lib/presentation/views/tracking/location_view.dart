@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -70,14 +72,18 @@ class _LocationTrackingViewState extends State<LocationTrackingView> {
         return;
       }
 
-      _positionSubscription = LocationService.getPositionUpdates().listen(
-        (position) async {
-          await _handleNewPosition(position);
-        },
-        onError: (e) {
-          setState(() => _error = e.toString());
-        },
-      );
+      try {
+        _positionSubscription = LocationService.getPositionUpdates().listen(
+          (position) async {
+            await _handleNewPosition(position);
+          },
+          onError: (e) {
+            setState(() => _error = "Erreur de suivi GPS: ${e.toString()}");
+          },
+        );
+      } catch (e) {
+        setState(() => _error = "Impossible d'accéder au GPS: ${e.toString()}");
+      }
 
       setState(() {
         _isTracking = true;
@@ -181,7 +187,7 @@ class _LocationTrackingViewState extends State<LocationTrackingView> {
           ),
         if (_currentLocation != null) _buildLocationDetails(theme),
         Expanded(
-          flex: 1,
+          flex: _currentLocation != null ? 1 : 2,
           child: _buildLocationsHistory(theme),
         ),
       ],
@@ -195,7 +201,7 @@ class _LocationTrackingViewState extends State<LocationTrackingView> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withAlpha(0.3 as int),
+            color: Colors.grey.withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),
@@ -297,7 +303,8 @@ class _LocationTrackingViewState extends State<LocationTrackingView> {
 
                 final locations = snapshot.data!;
                 if (locations.isEmpty) {
-                  return const Center(child: Text("Aucune position enregistrée."));
+                  return const Center(
+                      child: Text("Aucune position enregistrée."));
                 }
 
                 return ListView.separated(

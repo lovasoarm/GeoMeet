@@ -1,6 +1,14 @@
 {
   "rules": {
-    ".read": "true",  
-    ".write": "true"
+    ".read": "true",
+    ".write": "true",
+    "userLocations": {
+      "$uid": {
+        ".indexOn": "timestamp"
+      }
+    },
+    "notifications": {
+      ".indexOn": ["to", "from_to", "timestamp"]
+    }
   }
 }
